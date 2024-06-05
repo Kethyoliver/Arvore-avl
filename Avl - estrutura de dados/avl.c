@@ -1,229 +1,142 @@
 #include <stdio.h>
+#include <stddef.h>
 #include <stdlib.h>
 
-/*
-Uma árvore binária balanceada é aquela em que, para
-qualquer nó, suas sub-árvores esquerda e direita têm
-a mesma altura
-*/
-
-//estrutura tipo No que compoe a AVL
 typedef struct No {
-  int info, altura;
-  struct No *esquerdo;
-  struct No *direito;
+    int info, altura;
+    struct No *esquerdo;
+    struct No *direito;
 } tipoAVL;
 
-//cria novo No
-tipoAVL *criaAVL(int x) {
-  tipoAVL *novo = malloc(sizeof(tipoAVL));
-  novo->altura = 0;
-  novo->info = x;
-  novo->esquerdo = NULL;
-  novo->direito = NULL;
-  return novo;
+// Function prototypes
+tipoAVL* criaAVL(int x);
+int altura(tipoAVL* raiz);
+int fatorBal(tipoAVL* raiz);
+tipoAVL* rotaDDir(tipoAVL* raiz);
+tipoAVL* rotaDirEsq(tipoAVL* raiz);
+tipoAVL* rotaDEsq(tipoAVL* raiz);
+tipoAVL* rotaEsqDir(tipoAVL* raiz);
+tipoAVL* insere(tipoAVL* raiz, int x);
+void inOrdem(tipoAVL* raiz);
+
+// Function definitions
+
+tipoAVL* criaAVL(int x) {
+    tipoAVL* novo = (tipoAVL*)malloc(sizeof(tipoAVL));
+    novo->info = x;
+    novo->altura = 1;
+    novo->esquerdo = NULL;
+    novo->direito = NULL;
+    return novo;
 }
 
-//funcao altura no auxiliar
-int altura(tipoAVL *raiz) {
-  int alt_esq, alt_dir;
-  if (raiz == NULL) {
-    return 0;
-  }
-  if (raiz->esquerdo == NULL) {
-    alt_esq = 0;
-  } else {
-    alt_esq = 1 + raiz->esquerdo->altura;
-  }
-  if (raiz->direito == NULL) {
-    alt_dir = 0;
-  } else {
-    alt_dir = 1 + raiz->direito->altura;
-  }
-  if (alt_esq > alt_dir) {
-    return alt_esq;
-  }
-  return alt_dir;
+int altura(tipoAVL* raiz) {
+    if (raiz == NULL)
+        return 0;
+    return raiz->altura;
 }
 
-//implementacoes das rotações simples e duplas para etapa de rebalanceamento
-//rotacoes simples: no desbalanceado (pai), seu filho e o seu neto estão todos no mesmo sentido de inclinação
-
-//rotacao simples direita
-tipoAVL *rotaDir(tipoAVL *raiz) {
-  tipoAVL *aux = raiz->esquerdo; //inserindo na sub-árvore da esquerda do filho esq
-  //no desbalanceado
-  //rotacoes a esquerda
-  raiz->esquerdo = aux->direito;
-  aux->direito = raiz;
-  raiz->altura = altura(raiz);
-  aux->altura = altura(aux);
-  printf("Rotacao a direita: ");
-  printf("troca de %d por %d\n", raiz->info, aux->info);
-  return aux;
+int fatorBal(tipoAVL* raiz) {
+    if (raiz == NULL)
+        return 0;
+    int alt_esq = altura(raiz->esquerdo);
+    int alt_dir = altura(raiz->direito);
+    return alt_esq - alt_dir;
 }
 
-//rotacao simples esquerda
-tipoAVL *rotaEsq(tipoAVL *raiz) {
-  tipoAVL *aux = raiz->direito;
-  raiz->direito = aux->esquerdo;
-  aux->esquerdo = raiz;
-  raiz->altura = altura(raiz);
-  aux->altura = altura(aux);
-  printf("Rotacao a esquerda: ");
-  printf("troca de %d por %d\n", raiz->info, aux->info);
-  return aux;
+tipoAVL* rotaDDir(tipoAVL* raiz) {
+    tipoAVL* novo = raiz->direito;
+    raiz->direito = novo->esquerdo;
+    novo->esquerdo = raiz;
+    raiz->altura = altura(raiz);
+    novo->altura = altura(novo);
+    return novo;
 }
 
-//rotacos duplas: no desbalanceado (pai) e seu filho estão inclinados no sentido inverso ao neto - equivale a duas rotações simples.
-
-//rotacao dupla direita
-tipoAVL *rotaDDir(tipoAVL *raiz) {
-  raiz = rotaEsq(raiz);
-  return raiz;
+tipoAVL* rotaDirEsq(tipoAVL* raiz) {
+    raiz->direito = rotaDEsq(raiz->direito);
+    return rotaDDir(raiz);
 }
 
-//rotacao dupla esquerda
-tipoAVL *rotaDEsq(tipoAVL *raiz) {
-  raiz = rotaDir(raiz);
-  return raiz;
+tipoAVL* rotaDEsq(tipoAVL* raiz) {
+    tipoAVL* novo = raiz->esquerdo;
+    raiz->esquerdo = novo->direito;
+    novo->direito = raiz;
+    raiz->altura = altura(raiz);
+    novo->altura = altura(novo);
+    return novo;
 }
 
-//rotacao esq-direita
-tipoAVL *rotaEsqDir(tipoAVL *raiz) {
-  raiz->esquerdo = rotaEsq(raiz->esquerdo);
-  raiz = rotaDir(raiz);
-  return raiz;
+tipoAVL* rotaEsqDir(tipoAVL* raiz) {
+    raiz->esquerdo = rotaDDir(raiz->esquerdo);
+    return rotaDEsq(raiz);
 }
 
-//rota dir-esq
-tipoAVL *rotaDirEsq(tipoAVL *raiz) {
-  raiz->direito = rotaDir(raiz->direito);
-  raiz = rotaEsq(raiz);
-  return raiz;
-}
-
-//calcula fatorBal
-/*
-FB(n) = altura(sub arvore dir) – altura(sub arvor esq)
-se FB(n) = 0, as duas sub-árvores têm a mesma
-altura
-se FB(n) = -1, a sub-árvore esquerda é mais alta que
-a direita em 1
-se FB(n) = +1, a sub-árvore direita é mais alta que a
-esquerda em 1
-*/
-int fatorBal(tipoAVL *raiz) {
-  int alt_esq, alt_dir;
-  if (raiz == NULL) {
-    return 0;
-  }
-  if (raiz->esquerdo == NULL) {
-    alt_esq = 0;
-  } else {
-    alt_esq = 1 + raiz->esquerdo->altura;
-  }
-  if (raiz->direito == NULL) {
-    alt_dir = 0;
-  } else {
-    alt_dir = 1 + raiz->direito->altura;
-  }
-  return (alt_esq - alt_dir);
-}
-
-//insercao elementos na avl
-tipoAVL *insere(tipoAVL *raiz, int x) {
-  if (raiz == NULL) {
-    raiz = criaAVL(x);
-  } else {
-    if (x > raiz->info) {
-      raiz->direito = insere(raiz->direito, x);
-      if (fatorBal(raiz) == -2) {
-        if (x > raiz->direito->info) {
-          raiz = rotaDDir(raiz);
-        } else {
-          raiz = rotaDirEsq(raiz);
-        }
-      }
+tipoAVL* insere(tipoAVL* raiz, int x) {
+    if (raiz == NULL) {
+        raiz = criaAVL(x);
     } else {
-      if (x < raiz->info) {
-        raiz->esquerdo = insere(raiz->esquerdo, x);
-        if (fatorBal(raiz) == 2) {
-          if (x < raiz->esquerdo->info) {
-            raiz = rotaDEsq(raiz);
-          } else {
-            raiz = rotaEsqDir(raiz);
-          }
+        if (x > raiz->info) {
+            raiz->direito = insere(raiz->direito, x);
+            if (fatorBal(raiz) == -2) {
+                if (x > raiz->direito->info) {
+                    raiz = rotaDDir(raiz);
+                } else {
+                    raiz = rotaDirEsq(raiz);
+                }
+            }
+        } else {
+            if (x < raiz->info) {
+                raiz->esquerdo = insere(raiz->esquerdo, x);
+                if (fatorBal(raiz) == 2) {
+                    if (x < raiz->esquerdo->info) {
+                        raiz = rotaDEsq(raiz);
+                    } else {
+                        raiz = rotaEsqDir(raiz);
+                    }
+                }
+            }
         }
-      }
     }
-  }
-  raiz->altura = altura(raiz);
-  return raiz;
+    raiz->altura = altura(raiz);
+    return raiz;
 }
 
-void inOrdem(tipoAVL *raiz) {
-  if (raiz != NULL) {
-    inOrdem(raiz->esquerdo);
-    printf(" %d (%d)\n", raiz->info, fatorBal(raiz));
-    inOrdem(raiz->direito);
-  }
+void inOrdem(tipoAVL* raiz) {
+    if (raiz != NULL) {
+        inOrdem(raiz->esquerdo);
+        printf(" %d (%d)\n", raiz->info, fatorBal(raiz));
+        inOrdem(raiz->direito);
+    }
 }
 
-//##################################################
-
-/*---------- EXEMPLO ----------*/
-/*
-a) Mostrar as rotações necessárias para a construção da seguinte árvore AVL: 9, 7, 1, 3, 4 e 8
-*/
 int main() {
-  printf("\n-------------------------------");
-  printf("\nExemplo Árvores Binárias AVL");
-  printf("\n-------------------------------\n");
+    printf("\n-------------------------------");
+    printf("\nExemplo Árvores Binárias AVL");
+    printf("\n-------------------------------\n");
 
-  //##################################################
+    printf(">> EXEMPLO\n");
+    printf("a) Mostrar as rotações necessárias para a construção da seguinte árvore AVL: 9, 7, 1, 3, 4 e 8\n");
 
-  printf(">> EXEMPLO\n");
+    printf("\nALV: 9 7 1 3 4  8\n\n");
 
-  //##################################################
+    tipoAVL* raiz = NULL;
+    raiz = insere(raiz, 9);
+    raiz = insere(raiz, 7);
+    raiz = insere(raiz, 1);
+    raiz = insere(raiz, 3);
+    raiz = insere(raiz, 4);
+    raiz = insere(raiz, 8);
 
-  printf("a) Mostrar as rotações necessárias para a construção da seguinte árvore AVL: 9, 7, 1, 3, 4 e 8\n");
+    printf("\nb) Defina em C uma estrutura de dados que possa representar uma árvore AVL\n");
+    printf("\ntypedef struct No{\n\tint info, altura;\n\tstruct No *esquerdo;\n\tstruct No *direito;\n} tipoAVL;\n");
 
-  printf("\nALV: 9 7 1 3 4  8");
-  printf("\n\n");
-  tipoAVL *raiz = NULL;
-  raiz = insere(raiz, 9);
-  raiz = insere(raiz, 7);
-  raiz = insere(raiz, 1);
-  raiz = insere(raiz, 3);
-  raiz = insere(raiz, 4);
-  raiz = insere(raiz, 8);
+    printf("\nc) Implemente procedimento para calcular FB;\n(consta no codigo)\n");
 
-  //##################################################
-  /*
-  b) Defina em C uma estrutura de dados que possa representar uma árvore AVL
-  */
+    printf("\nd) Implemente procedimento que percorra a árvore e imprima o fator de balanceamento de cada nó em uma ordem infixada com o seguinte formato:\nn(FB), onde n é uma raiz de subárvore e FB o fator de balanceamento.\n");
+    printf("\nExemplo com a arvore 5 4 3 6 7 8\n n(FB):\n----------\n");
+    inOrdem(raiz);
 
-  printf("\nb) Defina em C uma estrutura de dados que possa representar uma árvore AVL\n");
-
-  printf("\ntypedef struct No{\n\tint info, altura;\n\tstruct No *esquerdo;\n\tstruct No *direito;\n} tipoAVL;\n");
-
-  //##################################################
-  /*
-  c)  Implemente procedimento para calcular FB
-  */
-
-  printf("\nc) Implemente procedimento para calcular FB;\n(consta no codigo)\n");
-
-  //##################################################
-  /*
-  d) Implemente procedimento que percorra a árvore e imprima o fator de balanceamento de cada nó em uma ordem infixada com o seguinte formato:\nn(FB), onde n é uma raiz de subárvore e FB o fator de balanceamento
-  */
-  printf("\nd) Implemente procedimento que percorra a árvore e imprima o fator de balanceamento de cada nó em uma ordem infixada com o seguinte formato:\nn(FB), onde n é uma raiz de subárvore e FB o fator de balanceamento.\n");
-  printf("\nExemplo com a arvore 5 4 3 6 7 8\n n(FB):\n----------\n");
-  inOrdem(raiz);
-  //##################################################
-
-  printf("\nf) Implemente os procedimentos de rotação simples (direita e esquerda)\n(consta no codigo)\n");
-  return 0;
+    printf("\nf) Implemente os procedimentos de rotação simples (direita e esquerda)\n(consta no codigo)\n");
+    return 0;
 }
