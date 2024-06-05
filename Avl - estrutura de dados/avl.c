@@ -118,7 +118,7 @@ int main() {
     printf(">> EXEMPLO\n");
     printf("a) Mostrar as rotações necessárias para a construção da seguinte árvore AVL: 9, 7, 1, 3, 4 e 8\n");
 
-    printf("\nALV: 9 7 1 3 4  8\n\n");
+    printf("\nALV: 9 7 1 3 4 8\n\n");
 
     tipoAVL* raiz = NULL;
     raiz = insere(raiz, 9);
@@ -134,7 +134,7 @@ int main() {
     printf("\nc) Implemente procedimento para calcular FB;\n(consta no codigo)\n");
 
     printf("\nd) Implemente procedimento que percorra a árvore e imprima o fator de balanceamento de cada nó em uma ordem infixada com o seguinte formato:\nn(FB), onde n é uma raiz de subárvore e FB o fator de balanceamento.\n");
-    printf("\nExemplo com a arvore 5 4 3 6 7 8\n n(FB):\n----------\n");
+    printf("\nExemplo com a arvore 9 7 1 3 4 8\n n(FB):\n----------\n");
     inOrdem(raiz);
 
     printf("\nf) Implemente os procedimentos de rotação simples (direita e esquerda)\n(consta no codigo)\n");
